@@ -143,13 +143,13 @@ The following claim will do this:
     c:[Type == "http://schemas.xmlsoap.org/claims/UPN"] => issue(Type = "http://schemas.microsoft.com/ws/2008/06/identity/claims/issuerid", Value = regexreplace(c.Value, "^.*@([^.]+\.)*?(?<domain>([^.]+\.?){2})$", "http://${domain}/adfs/services/trust/"));
 
 [!NOTE]
-The last number in the regular expression set is how many parent domains there are in your root domain. Here bmcontoso.com is used, so two parent domains are necessary. If three parent domains were to be kept (i.e.: corp.bmcontoso.com), then the number would have been three. Eventually a range can be indicated, the match will always be made to match the maximum of domains. "{2,3}" will match two to three domains (i.e.: bmfabrikam.com and corp.bmcontoso.com).
+The last number in the regular expression set is how many parent domains there are in your root domain. Here bmcontoso.com is used, so two parent domains are necessary. If three parent domains were to be kept (i.e.: corp.bmcontoso.com), then the number would have been three. Alternatively a range can be indicated to match the maximum number of domains. For example "{2,3}" will match two to three domains (i.e.: bmfabrikam.com and corp.bmcontoso.com).
 
 Use the following steps to add a custom claim to support subdomains.
 
 1. Open AD FS Management
 2. Right-click the Microsoft Online RP trust and choose Edit Claim rules
-3. Select the third claim rule, and replace
+3. Select the third claim rule, and click Edit Rule...
    ![Edit claim](./media/active-directory-multiple-domains/sub1.png)
 4. Replace the current claim:
 
@@ -161,6 +161,27 @@ Use the following steps to add a custom claim to support subdomains.
 
     ![Replace claim](./media/active-directory-multiple-domains/sub2.png)
 
+5. Click Ok.  Click Apply.  Click Ok.  Close AD FS Management.
+
+If you have used Azure AD Connect to configure Hybrid Azure AD join, your rules may not appear as above, but instead contain around 14 named rules. Instead of editing the third claim rule, you would edit the rule named **Issue issuerid when it is not a computer account** as follows:
+
+1. Open AD FS Management
+2. Right-click the Microsoft Online RP trust and choose Edit Claim rules
+3. Select the claim rule named **Issue issuerid when it is not a computer account** and click Edit Rule...
+4. Replace the current claim:
+
+        c1:[Type == "http://schemas.xmlsoap.org/claims/UPN"] 
+          && c2:[Type == "http://schemas.microsoft.com/ws/2012/01/accounttype", Value == "User"]
+          
+          => issue(Type = "http://schemas.microsoft.com/ws/2008/06/identity/claims/issuerid", Value = regexreplace(c1.Value, "(?i)(^([^@]+)@)(?<domain>(bmfabrikam\.com|bmcontoso\.com))$", "http://${domain}/adfs/services/trust/"));,"http://${domain}/adfs/services/trust/"));
+
+       with
+
+        c1:[Type == "http://schemas.xmlsoap.org/claims/UPN"] 
+          && c2:[Type == "http://schemas.microsoft.com/ws/2012/01/accounttype", Value == "User"]
+          
+          => issue(Type = "http://schemas.microsoft.com/ws/2008/06/identity/claims/issuerid", Value = regexreplace(c1.Value, "^.*@([^.]+\.)*?(?<domain>([^.]+\.?){2})$", "http://${domain}/adfs/services/trust/"));
+          
 5. Click Ok.  Click Apply.  Click Ok.  Close AD FS Management.
 
 ## Next steps
